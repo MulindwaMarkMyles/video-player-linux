@@ -1,54 +1,73 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QSlider, QFileDialog
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
-from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtCore import QUrl, Qt
+import vlc
+from PyQt5 import QtWidgets, QtGui, QtCore
 
-class VideoPlayer(QMainWindow):
+class VideoPlayer(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Video Player")
+
+        # Initialize VLC player instance
+        # vlc_args = ["--no-xlib", "--avcodec-hw=vaapi"] 
+        self.vlc_instance = vlc.Instance()
+        self.media_player = self.vlc_instance.media_player_new()
+
+        # Set up the UI
+        self.init_ui()
+
+    def init_ui(self):
+        # Create a central widget and a layout
+        self.widget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.widget)
+        self.layout = QtWidgets.QVBoxLayout()
+        self.widget.setLayout(self.layout)
+
+        # Create a video frame to display the video
+        self.video_frame = QtWidgets.QFrame(self)
+        self.layout.addWidget(self.video_frame)
+
+        # Create control buttons
+        self.play_button = QtWidgets.QPushButton('Play')
+        self.stop_button = QtWidgets.QPushButton('Stop')
+        self.open_button = QtWidgets.QPushButton('Open File')
+
+        # Create a horizontal layout for buttons
+        self.control_layout = QtWidgets.QHBoxLayout()
+        self.control_layout.addWidget(self.open_button)
+        self.control_layout.addWidget(self.play_button)
+        self.control_layout.addWidget(self.stop_button)
+
+        # Add button layout to the main layout
+        self.layout.addLayout(self.control_layout)
+
+        # Connect button signals to their respective functions
+        self.play_button.clicked.connect(self.play_video)
+        self.stop_button.clicked.connect(self.stop_video)
+        self.open_button.clicked.connect(self.open_file)
+
+        # Set window properties
+        self.setWindowTitle("Python Video Player")
         self.setGeometry(100, 100, 800, 600)
-
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        videoWidget = QVideoWidget()
-
-        openButton = QPushButton("Open")
-        openButton.clicked.connect(self.open_file)
-
-        playButton = QPushButton("Play")
-        playButton.clicked.connect(self.play_video)
-
-        volumeSlider = QSlider(Qt.Horizontal)
-        volumeSlider.setRange(0, 100)
-        volumeSlider.setValue(50)
-        volumeSlider.valueChanged.connect(self.mediaPlayer.setVolume)
-
-        layout = QVBoxLayout()
-        layout.addWidget(videoWidget)
-        layout.addWidget(openButton)
-        layout.addWidget(playButton)
-        layout.addWidget(volumeSlider)
-
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
-
-        self.mediaPlayer.setVideoOutput(videoWidget)
-        self.video_url = None
+        self.show()
 
     def open_file(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Video File", "", "Video Files (*.mp4 *.avi *.mkv *.flv *.mov)")
-        if file_name:
-            self.video_url = QUrl.fromLocalFile(file_name)
+        # Open a file dialog to select video
+        filename, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open Video")
+
+        if filename:
+            # Set the media and attach it to VLC player
+            self.media = self.vlc_instance.media_new(filename)
+            self.media_player.set_media(self.media)
+            self.media_player.set_xwindow(int(self.video_frame.winId()))
 
     def play_video(self):
-        if self.video_url:
-            self.mediaPlayer.setMedia(QMediaContent(self.video_url))
-            self.mediaPlayer.play()
+        # Play the video
+        self.media_player.play()
+
+    def stop_video(self):
+        # Stop the video
+        self.media_player.stop()
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     player = VideoPlayer()
-    player.show()
     sys.exit(app.exec_())
