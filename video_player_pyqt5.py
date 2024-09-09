@@ -16,6 +16,9 @@ class VideoPlayer(QtWidgets.QMainWindow):
         self.timer.setInterval(1000)  # Update every second
         self.timer.timeout.connect(self.update_slider)
 
+        # Track the playback state
+        self.is_playing = False
+        
         # Set up the UI
         self.init_ui()
 
@@ -72,7 +75,16 @@ class VideoPlayer(QtWidgets.QMainWindow):
         # Create a horizontal layout for the progress slider
         
         progress_layout = QtWidgets.QHBoxLayout()
+    
+        # Create an overlay widget for the controls
+        self.control_widget = QtWidgets.QWidget(self.video_frame)
+        # self.control_widget.setStyleSheet("background: rgba(255, 255, 255, 0.4);")  # Semi-transparent background
 
+
+        # Create an overlay layout for control buttons
+        self.control_layout = QtWidgets.QHBoxLayout()
+        self.control_widget.setLayout(self.control_layout)
+        
         # Create a progress slider
         self.progress_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         self.progress_slider.setRange(0, 1000)  # Placeholder range
@@ -99,14 +111,12 @@ class VideoPlayer(QtWidgets.QMainWindow):
                 background: #fff;
                 width: 20px;
                 height: 20px;
-                border-radius: 20px;
             }
             QSlider::handle:horizontal:hover {
-                background: #d00;
-                border: 1px solid #d00;
+                background: #f0f0f0;
             }
             QSlider::sub-page:horizontal {
-                background: #777;
+                background: #bebdbd;
                 border: 1px solid #777;
             }
             QSlider::add-page:horizontal {
@@ -128,9 +138,6 @@ class VideoPlayer(QtWidgets.QMainWindow):
         self.stop_button.setFixedWidth(100)
         self.open_button.setFixedWidth(100)
         
-        # Create a horizontal layout for buttons
-        self.control_layout = QtWidgets.QHBoxLayout()
-        # self.control_layout.setSpacing(20)  
         
         self.control_layout.addStretch(1) 
         self.control_layout.addWidget(self.open_button)
@@ -139,19 +146,29 @@ class VideoPlayer(QtWidgets.QMainWindow):
         self.control_layout.addWidget(self.stop_button)
         self.control_layout.addStretch(1) 
 
-        # Add button layout to the main layout
-        self.layout.addLayout(self.control_layout)
 
         # Connect button signals to their respective functions
         self.play_button.clicked.connect(self.play_video)
         self.pause_button.clicked.connect(self.pause_video)
         self.stop_button.clicked.connect(self.stop_video)
         self.open_button.clicked.connect(self.open_file)
+        
+        # Install event filter for mouse hover detection
+        self.video_frame.installEventFilter(self)
 
         # Set window properties
-        self.setWindowTitle("Python Video Player")
+        # self.setWindowTitle("Python Video Player")
         self.setGeometry(100, 100, 800, 600)
         self.show()
+        
+    
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Space:
+            if self.is_playing:
+                self.pause_video()
+            else:
+                self.play_video()
+        super().keyPressEvent(event)
 
     def open_file(self):
         # Open a file dialog to select video
@@ -162,6 +179,8 @@ class VideoPlayer(QtWidgets.QMainWindow):
             self.media = self.vlc_instance.media_new(filename)
             self.media_player.set_media(self.media)
             self.media_player.set_xwindow(int(self.video_frame.winId()))
+            self.media_player.play()  # Automatically start playing the video
+            self.timer.start()
 
     def play_video(self):
         # Play the video
@@ -189,6 +208,15 @@ class VideoPlayer(QtWidgets.QMainWindow):
         # Set the new position in the video
         length = self.media_player.get_length()
         self.media_player.set_time(int(position * length / 1000))
+        
+    def eventFilter(self, obj, event):
+        if obj == self.video_frame and event.type() == QtCore.QEvent.Enter:
+            print("Mouse entered")
+            self.control_widget.show()  # Show overlay when mouse enters the video frame
+        elif obj == self.video_frame and event.type() == QtCore.QEvent.Leave:
+            print("Mouse left")
+            self.control_widget.hide()  # Hide overlay when mouse leaves the video frame
+        return super().eventFilter(obj, event)
 
 
 if __name__ == "__main__":
