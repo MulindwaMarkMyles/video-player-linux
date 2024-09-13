@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:video_app/video_player_screen.dart';
 import 'package:media_kit/media_kit.dart';
@@ -47,6 +46,7 @@ class WindowContainer extends StatefulWidget {
 class _WindowContainerState extends State<WindowContainer> {
   bool _showButtons = false;
   Timer? _hideTimer; // Timer to hide buttons
+  Timer? _showTimer; // Timer to hide buttons
 
   void _startHideTimer() {
     _hideTimer?.cancel(); // Cancel any previous timers
@@ -58,10 +58,29 @@ class _WindowContainerState extends State<WindowContainer> {
     });
   }
 
+  void _showButtonsTemporarily() {
+    _showTimer?.cancel(); // Cancel any previous timers
+    setState(() {
+      _showButtons = true; // Show buttons immediately
+    });
+    _showTimer = Timer(Duration(seconds: 2), () {
+      // Set a 2-second delay
+      setState(() {
+        _showButtons = false; // Hide buttons after delay
+      });
+    });
+  }
+
   @override
   void dispose() {
     _hideTimer?.cancel(); // Cancel the timer when disposing
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _showButtonsTemporarily();
   }
 
   @override
@@ -111,7 +130,10 @@ class MinimizeWindowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.remove,color: Colors.white,),
+      icon: Icon(
+        Icons.remove,
+        color: Colors.white,
+      ),
       onPressed: () {
         appWindow.minimize();
       },
@@ -123,7 +145,10 @@ class MaximizeWindowButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.crop_square, color: Colors.white,),
+      icon: Icon(
+        Icons.crop_square,
+        color: Colors.white,
+      ),
       onPressed: () {
         appWindow.maximizeOrRestore();
       },
