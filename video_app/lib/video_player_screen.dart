@@ -6,8 +6,6 @@ import 'package:file_picker/file_picker.dart';
 class VideoPlayerScreen extends StatefulWidget {
   @override
   State<VideoPlayerScreen> createState() => VideoPlayerScreenState();
-  final String filePath;
-  const VideoPlayerScreen({super.key, required this.filePath});
 }
 
 class VideoPlayerScreenState extends State<VideoPlayerScreen> {
@@ -19,7 +17,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    // Open file picker dialog to select a video file
     _pickAndPlayVideo();
   }
 
@@ -43,16 +40,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void dispose() {
     player.dispose();
-    // controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Video Player"),
-      ),
       body: Center(
         child: SizedBox(
           width: MediaQuery.of(context).size.width,
